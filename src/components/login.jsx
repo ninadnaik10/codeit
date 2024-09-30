@@ -1,52 +1,19 @@
 import React, { useState } from 'react';
 import '../App.css';
-import mainImg from '../assets/codeit-logo.png'
-// import './bg-main.css'
-import '../styles/signup.css'
-import { login } from '../utilities/Login'
+import mainImg from '../assets/codeit-logo.png';
+import '../styles/signup.css';
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { useNavigate } from 'react-router-dom';
-import { useAuthValue } from '../utilities/AuthContext'
-import { auth, db } from "../utilities/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { redirect } from 'react-router-dom'
-import { writeBatch, doc, addDoc, collection } from 'firebase/firestore';
+import { useAuthValue } from '../utilities/AuthContext';
+import { auth, provider } from '../firebaseConfig'
 
 export default function Login() {
-
-    // async function importJSONToFirestore(collectionName, jsonArray) {
-    //     try {
-    //     const batch = writeBatch(db);
-    //       jsonArray.forEach((jsonObject) => {
-    //         // Generate a new document reference for each JSON object
-    //         addDoc(collection(db, collectionName), jsonObject);
-    //         // batch.set(newDocRef, jsonObject);
-    //       });
-
-    //       // Commit the batch
-    //     //   await batch.commit();
-
-    //       // console.log('Import completed successfully.');
-    //     } catch (error) {
-    //       console.error('Error importing data to Firestore:', error);
-    //     }
-    //   }
-
-    // Example usage
-
-
-
-
-    const collectionName = 'problems'; // Replace with your desired collection name
-
-
-
     const [loginData, setLoginData] = useState({
         email: '',
         password: '',
     });
     const navigate = useNavigate();
-    const { currentUser } = useAuthValue()
-    // // console.log(loginData.email)
+    const { currentUser } = useAuthValue();
 
     const handleInputChange = (event) => {
         const { name, value } = event.target;
@@ -56,40 +23,25 @@ export default function Login() {
         }));
     };
 
-    const login = async (email, password, e) => {
-        // e.preventDefault();
-        //   setError("");
-        //   debugger
+    const login = async (email, password) => {
         signInWithEmailAndPassword(auth, email, password)
-            .then((res) => {
-                //   debugger
-                // console.log(res.user);
-                //   debugger
-                navigate('/dashboard')
+            .then(() => {
+                navigate('/dashboard');
             })
             .catch((err) => alert(err.message));
-
-        //   setEmail("");
-        //   setPassword("");
-        //   setConfirmPassword("");
     };
 
-    // const handleSubmit = async (event) => {
-    //     event.preventDefault();
-    //     const { email, password } = loginData;
-
-
-    //     const params = new URLSearchParams();
-    //     params.append('email', email);
-    //     params.append('password', password);
-
-    //     const url = `register?${params}`;
-
-    //     let postReq = await fetch(url)
-    //     // console.log("hiiii")
-    //     let res = await postReq.json()
-    //     // console.log('Logged in with', res.body);
-    // };
+    const loginWithGoogle = async () => {
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                // User logged in with Google
+                navigate('/dashboard');
+            })
+            .catch((error) => {
+                console.error(error);
+                alert('Google sign-in failed!');
+            });
+    };
 
     return (
         <div className='signup-mainbody flex'>
@@ -129,18 +81,14 @@ export default function Login() {
                         />
                     </div>
                     <div className="btn-container">
-                        <div>
-                            <button className='signup-btn' onClick={(e) => {
-                                // debugger
-                                login(loginData.email, loginData.password)
-                                // debugger
-                            }}>Login</button>
-                        </div>
+                        <button className='signup-btn' onClick={() => login(loginData.email, loginData.password)}>
+                            Login
+                        </button>
                     </div>
                 </div>
                 <h4 className='or'> or </h4>
                 <div className='google-btn'>
-                    <button className='flex'>
+                    <button className='flex' onClick={loginWithGoogle}>
                         <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid" viewBox="0 0 256 262">
                             <path fill="#4285F4" d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"></path>
                             <path fill="#34A853" d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055-34.523 0-63.824-22.773-74.269-54.25l-1.531.13-40.298 31.187-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1"></path>

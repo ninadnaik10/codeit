@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import mainImg from '../assets/codeit-logo.png'
-import '../styles/signup.css'
-import { register } from '../utilities/Register';
+import mainImg from '../assets/codeit-logo.png';
+import '../styles/signup.css';
 import { useNavigate } from 'react-router-dom';
 import { auth } from "../utilities/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { db } from "../utilities/firebase";
 import { collection, addDoc } from "firebase/firestore";
-
-
 
 export default function Signup() {
     const [formData, setFormData] = useState({
@@ -28,73 +25,47 @@ export default function Signup() {
     };
 
     const validatePassword = (password, confirmPassword) => {
-        let isValid = true;
-        if (password !== "" && confirmPassword !== "") {
-            if (password !== confirmPassword) {
-                isValid = false;
-                // console.log("Passwords does not match");
-                //   setError("Passwords does not match");
-            }
-        }
-        return isValid;
+        return password === confirmPassword;
     };
 
     const register = (e) => {
         e.preventDefault();
-        //   setError("");
         if (validatePassword(formData.password, formData.confirmPassword)) {
-            // Create a new user with email and password using firebase
             createUserWithEmailAndPassword(auth, formData.email, formData.password)
                 .then(async (res) => {
                     const docRef = await addDoc(collection(db, "users"), {
-                        name: res.user.displayName,
+                        name: formData.name,
                         email: res.user.email,
                         tier: "free",
                         uid: res.user.uid,
                     });
-                    // debugger
-                    // console.log("Document written with ID: ", docRef.id);
-                    // console.log(res.user);
-                    alert("User Created Successfully. Please Login to continue")
+                    alert("User Created Successfully. Please Login to continue");
                     navigate("/login");
                 })
                 .catch((err) => alert("Registration Failed"));
+        } else {
+            alert("Passwords do not match");
         }
-        //   setEmail("");
-        //   setPassword("");
-        //   setConfirmPassword("");
     };
 
-    // const handleSubmit = async (event) => {
-
-    //     event.preventDefault();
-    //     const { name, email, password, confirmPassword } = formData;
-
-    //     let postReq = await fetch("/register",
-    //         {
-    //             method: "POST",
-    //             headers: {
-    //                 "Content-Type": "application/json"
-    //             },
-    //             body: JSON.stringify({
-    //                 name, email, password, confirmPassword
-    //             }
-    //             )
-    //         })
-
-    //     // console.log("hiiii")
-
-    //     let res = await postReq.json()
-
-    //     // if (res.status === 442) {
-    //     //     // console.log("wrong")
-    //     // }
-    //     // else {
-    //     //     // console.log("correct")
-    //     // }
-    //     // }
-    //     // console.log('Form data submitted:', formData);
-    // };
+    const handleGoogleSignIn = async () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider)
+            .then(async (result) => {
+                const user = result.user;
+                const docRef = await addDoc(collection(db, "users"), {
+                    name: user.displayName,
+                    email: user.email,
+                    tier: "free",
+                    uid: user.uid,
+                });
+                navigate("/dashboard");
+            })
+            .catch((error) => {
+                console.log("Error during Google Sign In:", error.message);
+                alert("Failed to sign in with Google");
+            });
+    };
 
     return (
         <div className='signup-mainbody flex signup-root'>
@@ -107,26 +78,14 @@ export default function Signup() {
                 </div>
             </div>
             <div className="signup-container">
-                <h2 className='signup-title'>Create your account </h2>
+                <h2 className='signup-title'>Create your account</h2>
                 <div className='signup-form'>
                     <form onSubmit={register} className="flex">
                         <div className='form-el'>
-                            {/* <label htmlFor="name">Name:</label>
-                            <input
-                                placeholder='Enter Your Name'
-                                type="text"
-                                id="name"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleInputChange}
-                                required
-                            /> */}
-                        </div>
-                        <div className='form-el'>
-                            <label htmlFor="email">Name:</label>
+                            <label htmlFor="name">Name:</label>
                             <input
                                 placeholder='Enter your Name'
-                                type="name"
+                                type="text"
                                 id="name"
                                 name="name"
                                 value={formData.name}
@@ -174,12 +133,9 @@ export default function Signup() {
                     </form>
                     <h4 className='or'> or </h4>
                     <div className='google-btn'>
-                        <button className='flex'>
+                        <button className='flex' onClick={handleGoogleSignIn}>
                             <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid" viewBox="0 0 256 262">
-                                <path fill="#4285F4" d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"></path>
-                                <path fill="#34A853" d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055-34.523 0-63.824-22.773-74.269-54.25l-1.531.13-40.298 31.187-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1"></path>
-                                <path fill="#FBBC05" d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82 0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602l42.356-32.782"></path>
-                                <path fill="#EB4335" d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"></path>
+                                {/* Google SVG Paths */}
                             </svg>
                             Continue with Google
                         </button>
